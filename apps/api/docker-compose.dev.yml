@@ -1,0 +1,40 @@
+version: "3"
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak
+    command: -v start-dev --import-realm
+    restart: always
+    ports:
+      - ${KEYCLOAK_PORT}:8080
+    environment:
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN_USERNAME}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_IMPORT: /opt/keycloak/data/import/realm-export.json
+    volumes:
+      - ./src/keycloak:/opt/keycloak/data/import
+  mqtt-broker:
+    image: emqx:5.4.0
+    ports:
+      - ${MQTT_PORT}:1883
+      - ${MQTT_WS_PORT}:8083
+      - ${MQTT_WEB_UI_PORT}:18083
+    healthcheck:
+      test:
+        - CMD
+        - /opt/emqx/bin/emqx
+        - ctl
+        - status
+      interval: 5s
+      timeout: 25s
+      retries: 5
+  db:
+    image: postgres:12
+    ports:
+      - ${DB_PORT}:5432
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+volumes:
+  postgres: ~
